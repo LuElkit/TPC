@@ -7,7 +7,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
-#include<err.h>
+#include <err.h>
 char* build_query(const char *url, size_t *len)
 {
 	char *query= malloc(sizeof(char)*strlen(url)+20);
@@ -48,17 +48,21 @@ void get_page(const char *name, const char *url, const char *port)
 	}
   size_t len;
 	char *query= build_query(url,&len);
-	ssize_t ok= send(connection,query,len,0);
+	ssize_t ok=send(connection,query,len,0);
 	if(ok==-1)
 	{
 		err(3,"Send of infos failed");
 	}
-	char donnees[len];
-	ok= read(connection,donnees,len);
-	ok= write(STDOUT_FILENO,donnees,len);
+	char donnees[1];
+	while(read(connection, donnees,1))
+	{
+		write(STDOUT_FILENO,donnees,1);
+	}
+	//ok= read(connection,donnees,len);
+	//ok= write(STDOUT_FILENO,donnees,len);
 	close(connection);
 	free(query);
- 	ok= write(STDOUT_FILENO,"Connection by the server",25);
+ 	ok= write(STDOUT_FILENO,"Connection by the server \n",27);
 
 }
 /*int main(int argc, char** argv)
