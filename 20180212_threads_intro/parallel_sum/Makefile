@@ -4,7 +4,7 @@ CC=gcc -fsanitize=address
 CPPFLAGs=
 CFLAGS= -Wall -Wextra -std=c99 -O2 -pthread
 LDFLAGS=
-LDLIBS=
+LDLIBS= 
  
 all:
  
