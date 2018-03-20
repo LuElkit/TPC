@@ -54,7 +54,6 @@ void shared_queue_push(struct shared_queue *queue, int val)
 	int e = sem_wait(&queue->lock);
 	if(e!=0)errx(e,"sem_wait():lock");
 	Push(queue->store,val);
-	queue->size +=1;
   int f= sem_post(&queue->size);
 	if(f!=0)errx(f,"sem_post():size");
 	int r = sem_post(&queue->lock);
@@ -70,7 +69,6 @@ int shared_queue_pop(struct shared_queue *queue)
 	int f=sem_wait(&queue->lock);
 	if(f!=0)errx(f,"sem_wait():lock");
 	int val= Pop(queue->store);
-	queue->size -=1;
 	int r= sem_post(&queue->lock);
 	if(r!=0)errx(r,"sem_post():lock");
 	return val;
@@ -78,7 +76,7 @@ int shared_queue_pop(struct shared_queue *queue)
 /* shared_queue_destroy(queue) destroy the queue                      *
  * free any remaining memory                                          */
 void shared_queue_destroy(struct shared_queue *queue)
-{	while(queue->store){
+{	while(queue->store->suiv){
 		queue->store->value=0;
-		queue->store->suiv =NULL;}
+		free(queue->store);}
 }
