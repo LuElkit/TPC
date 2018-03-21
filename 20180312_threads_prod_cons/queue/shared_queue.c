@@ -6,13 +6,18 @@
 #include <assert.h>
 
 
-
+struct queue* queue_init(void)
+{
+	struct queue *queue = malloc(sizeof(struct queue));
+	queue->suiv = queue;
+	return queue;
+}
 /* new_shared_queue() allocate and initialize a new queue             */
 struct shared_queue* new_shared_queue(void)
 {
 	struct shared_queue *queue =malloc(sizeof(struct shared_queue));
-	queue->store = malloc(sizeof(struct queue));
-  int e = sem_init(&queue->lock,0,0);
+  queue->store = queue_init();
+  int e = sem_init(&queue->lock,0,1);
 	if(e!=0)errx(3,"Fail");
 	int f= sem_init(&queue->size,0,0);
 	if(f!=0)errx(3,"FAIL");
@@ -21,28 +26,25 @@ struct shared_queue* new_shared_queue(void)
 
 static void Push(struct queue *queue,int val)
 {
-  struct queue *node = malloc(sizeof(struct queue));
+  struct queue *node = queue_init();
 	node->value = val;
-  if(queue)
-		node->suiv=queue;
-  else {
-		node->suiv=queue->suiv;
+  if(queue){
+  	node->suiv=queue->suiv;
     queue->suiv = node;}
-	queue = node;
+	queue->suiv = node;
 
 }
 static int Pop(struct queue *queue)
 {
-  //assert(queue != NULL);
-  if(!queue)
-		errx(3,"FAIL");
-	struct queue *node = malloc(sizeof(*node));
-  node = queue->suiv;
+  assert(queue);
+  struct queue *node = queue->suiv;
   int x = node->value;
   if(node->suiv == node)
 		queue =NULL;
 	else
-		queue->suiv = node->suiv;
+		{queue->suiv = node->suiv;
+		 node->suiv = NULL;
+  }
 	free(node);
   return x;
 
@@ -54,7 +56,7 @@ void shared_queue_push(struct shared_queue *queue, int val)
 	int e = sem_wait(&queue->lock);
 	if(e!=0)errx(e,"sem_wait():lock");
 	Push(queue->store,val);
-	queue->size +=1;
+
   int f= sem_post(&queue->size);
 	if(f!=0)errx(f,"sem_post():size");
 	int r = sem_post(&queue->lock);
@@ -70,7 +72,7 @@ int shared_queue_pop(struct shared_queue *queue)
 	int f=sem_wait(&queue->lock);
 	if(f!=0)errx(f,"sem_wait():lock");
 	int val= Pop(queue->store);
-	queue->size -=1;
+
 	int r= sem_post(&queue->lock);
 	if(r!=0)errx(r,"sem_post():lock");
 	return val;
@@ -78,7 +80,9 @@ int shared_queue_pop(struct shared_queue *queue)
 /* shared_queue_destroy(queue) destroy the queue                      *
  * free any remaining memory                                          */
 void shared_queue_destroy(struct shared_queue *queue)
-{	while(queue->store){
-		queue->store->value=0;
-		queue->store->suiv =NULL;}
+{ 
+	sem_destroy(&queue->lock);
+	sem_destroy(&queue->size);
+	free(queue->store);
+	free(queue);
 }
