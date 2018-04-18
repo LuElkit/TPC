@@ -49,7 +49,7 @@ void sigint_handler(int sig) {
 void server(const char* portname)
 {
 	int info_err = 0;
-  struct addrinfo hints,*answer, *resinfo = NULL;
+  struct addrinfo hints,*resinfo = NULL;
 	int connection; 
   int reuse_err;
   int reuse = 1;
@@ -77,9 +77,9 @@ void server(const char* portname)
     err(EXIT_FAILURE, "Fail to set socket options");
 		}
 	int ok= fdaccept_register(connection);
-	int True =connect(ok, resinfo->ai_addr,resinfo->ai_addrlen);
+	int True =bind(ok, resinfo->ai_addr,resinfo->ai_addrlen);
 	freeaddrinfo(resinfo);
-  if(True==0)
+  if(True==-1)
 	{
 		errx(EXIT_FAILURE, "Couldn't connect");
 	}
@@ -88,6 +88,7 @@ void server(const char* portname)
 	int fdcnx= accept(ok,NULL,NULL);
 	if(fork()){
 		close(fdcnx);
+		//wait(NULL);
 		continue;
 	}
 	close(ok);
@@ -124,5 +125,5 @@ int main(int argc, char** argv)
   if ( sigaction(SIGCHLD, &sigchld, NULL) == -1 )
     err(EXIT_FAILURE, "can't change SIGCHLD behavior");
 	server(argv[1]);
-
+	return 0;
 }
